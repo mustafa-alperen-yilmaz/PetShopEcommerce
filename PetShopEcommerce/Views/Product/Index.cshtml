@@ -1,0 +1,21 @@
+﻿@model List<Product>
+
+<h1>Product List</h1>
+
+@if (Model != null && Model.Count > 0)
+{
+    <ul>
+        @foreach (var product in Model)
+        {
+            <li>
+                <h4>@product.Name</h4>
+                <p>@product.Description</p>
+                <p>Price: @product.Price</p>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No products found.</p>
+}
