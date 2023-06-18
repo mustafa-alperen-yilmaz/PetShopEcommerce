@@ -12,6 +12,7 @@
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Total Price</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -20,9 +21,22 @@
                 <tr>
                     <td>@product.Id</td>
                     <td>@product.Name</td>
-                    <td>@product.Quantity</td>
+                    <td>
+                        <form method="post" action="/Cart/UpdateCartItem">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="number" name="quantity" value="@product.Quantity" min="0" max="100" />
+                            <button type="submit">Update</button>
+                        </form>
+                    </td>
                     <td>@product.Price</td>
                     <td>@(product.Price * product.Quantity)</td>
+                    <td>
+                        <form method="post" action="/Cart/UpdateCartItem">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="quantity" value="0" />
+                            <button type="submit">Remove</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using PetShopEcommerce.Models;
 using System.Collections.Generic;
 using PetShopEcommerce.Extensions;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace PetShopEcommerce.Controllers
 {
@@ -49,6 +50,28 @@ namespace PetShopEcommerce.Controllers
             _httpContextAccessor.HttpContext.Session.SetObject("CartItems", _cartItems);
 
             return RedirectToAction("Index", "Cart");
+        }
+        [HttpPost]
+        public IActionResult UpdateCartItem(int productId, int quantity)
+        {
+            var cartItems = _httpContextAccessor.HttpContext.Session.GetObject<List<Product>>("CartItems");
+            var cartItem = cartItems.FirstOrDefault(item => item.Id == productId);
+
+            if (cartItem != null)
+            {
+                if (quantity > 0)
+                {
+                    cartItem.Quantity = quantity;
+                }
+                else
+                {
+                    cartItems.Remove(cartItem);
+                }
+            }
+
+            _httpContextAccessor.HttpContext.Session.SetObject("CartItems", cartItems);
+
+            return RedirectToAction("Index");
         }
 
     }
