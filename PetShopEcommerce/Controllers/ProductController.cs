@@ -32,6 +32,28 @@ namespace PetShopEcommerce.Controllers
 
             return View(product);
         }
+        public IActionResult Search(string searchQuery)
+        {
+            List<Product> products;
+
+            if (string.IsNullOrEmpty(searchQuery))
+            {
+                products = new List<Product>(); // Create an empty list when searchQuery is empty
+            }
+            else
+            {
+                products = _dbContext.Products
+                    .Where(p => p.Name.Contains(searchQuery) || p.Description.Contains(searchQuery))
+                    .ToList();
+            }
+
+            if (string.IsNullOrEmpty(searchQuery) || products.Count == 0)
+            {
+                products = new List<Product>();
+            }
+
+            return View(products);
+        }
     }
 
 
