@@ -13,6 +13,13 @@
                 <h4>@product.Name</h4>
                 <p>@product.Description</p>
                 <p>Price: @product.Price</p>
+                <a href="/Product/Details/@product.Id">View Details</a>
+                <form method="post" action="/Cart/AddToCart">
+                    <input type="hidden" name="productId" value="@product.Id" />
+                    <input type="hidden" name="productName" value="@product.Name" />
+                    <input type="hidden" name="price" value="@product.Price" />
+                    <input type="submit" value="Add to Cart" />
+                </form>
             </li>
         }
     </ul>

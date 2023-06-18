@@ -1,0 +1,23 @@
+﻿@model Product
+
+<h1>Product Details</h1>
+
+<div>
+    <img src="@Model.ImageURL" />
+    <h4>@Model.Name</h4>
+    <p>@Model.Description</p>
+    <p>Price: @Model.Price</p>
+</div>
+
+<form method="post" action="/Cart/AddToCart">
+    <input type="hidden" name="productId" value="@Model.Id" />
+    <input type="hidden" name="productName" value="@Model.Name" />
+    <input type="hidden" name="price" value="@Model.Price" />
+    <div>
+        <span>Quantity: </span>
+        <input type="number" name="quantity" value="1" min="1" />
+    </div>
+    <div>
+        <input type="submit" value="Add to Cart" />
+    </div>
+</form>
