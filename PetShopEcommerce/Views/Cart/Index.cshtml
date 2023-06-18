@@ -9,7 +9,9 @@
             <tr>
                 <th>Product Id</th>
                 <th>Name</th>
+                <th>Quantity</th>
                 <th>Price</th>
+                <th>Total Price</th>
             </tr>
         </thead>
         <tbody>
@@ -18,11 +20,16 @@
                 <tr>
                     <td>@product.Id</td>
                     <td>@product.Name</td>
+                    <td>@product.Quantity</td>
                     <td>@product.Price</td>
+                    <td>@(product.Price * product.Quantity)</td>
                 </tr>
             }
         </tbody>
     </table>
+    <div>
+        <h4>Total Price: @Model.Sum(p => p.Price * p.Quantity)</h4>
+    </div>
 }
 else
 {

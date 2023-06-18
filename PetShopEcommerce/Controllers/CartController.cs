@@ -27,16 +27,22 @@ namespace PetShopEcommerce.Controllers
         [HttpPost]
         public IActionResult AddToCart(int productId, string productName, decimal price, int quantity)
         {
-            var product = new Product
-            {
-                Id = productId,
-                Name = productName,
-                Price = price
-            };
+            var existingProduct = _cartItems.FirstOrDefault(p => p.Id == productId);
 
-            for (int i = 0; i < quantity; i++)
+            if (existingProduct == null)
             {
+                var product = new Product
+                {
+                    Id = productId,
+                    Name = productName,
+                    Price = price,
+                    Quantity = quantity 
+                };
                 _cartItems.Add(product);
+            }
+            else
+            {
+                existingProduct.Quantity += quantity; 
             }
 
             // Store the updated cart items back into session
@@ -44,5 +50,6 @@ namespace PetShopEcommerce.Controllers
 
             return RedirectToAction("Index", "Cart");
         }
+
     }
 }
