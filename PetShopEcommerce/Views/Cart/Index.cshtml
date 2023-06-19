@@ -52,4 +52,13 @@
 else
 {
     <p>No items in the cart.</p>
+    <div>
+        <button type="button" class="btn btn-primary" onclick="showErrorMessage()">Ödeme Yap</button>
+    </div>
 }
+
+<script>
+    function showErrorMessage() {
+        alert("Sepette ürün bulunmamaktadır.");
+    }
+</script>
