@@ -44,6 +44,10 @@
     <div>
         <h4>Total Price: @Model.Sum(p => p.Price * p.Quantity)</h4>
     </div>
+    <div>
+        <a href="/Cart/Payment" class="btn btn-primary">Ödeme Yap</a>
+    </div>
+
 }
 else
 {
