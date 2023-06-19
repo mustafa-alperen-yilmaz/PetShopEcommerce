@@ -1,0 +1,55 @@
+﻿@model List<Product>
+
+<h1>Cart</h1>
+
+@if (Model != null && Model.Count > 0)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Product Id</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td>
+                        <form method="post" action="/Cart/UpdateCartItem">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="number" name="quantity" value="@product.Quantity" min="0" max="100" />
+                            <button type="submit">Update</button>
+                        </form>
+                    </td>
+                    <td>@product.Price</td>
+                    <td>@(product.Price * product.Quantity)</td>
+                    <td>
+                        <form method="post" action="/Cart/UpdateCartItem">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="quantity" value="0" />
+                            <button type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div>
+        <h4>Total Price: @Model.Sum(p => p.Price * p.Quantity)</h4>
+    </div>
+    <div>
+        <a href="/Cart/Payment" class="btn btn-primary">Ödeme Yap</a>
+    </div>
+
+}
+else
+{
+    <p>No items in the cart.</p>
+}

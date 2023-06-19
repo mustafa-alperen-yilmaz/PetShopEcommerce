@@ -30,7 +30,7 @@ namespace PetShopEcommerce.Controllers
                 return NotFound();
             }
 
-            return View(product);
+            return View("Details", product);
         }
         public IActionResult Search(string searchQuery)
         {
