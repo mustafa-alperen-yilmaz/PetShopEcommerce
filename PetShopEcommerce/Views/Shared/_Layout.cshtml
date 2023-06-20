@@ -27,14 +27,16 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                         <li class="nav-item">
-                            <form method="get" asp-controller="Product" asp-action="Search">
-                                <input type="text" name="searchQuery" placeholder="Search for products">
-                                <button type="submit">Search</button>
+                            <form method="get" asp-controller="Product" asp-action="Search" class="form">
+                                <div class="form-group d-flex">
+                                    <input type="text" name="searchQuery" class="form-control mr-2" placeholder="Search for products" />
+                                    <button type="submit" class="btn btn-primary">Ara</button>
+                                </div>
                             </form>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="Cart" asp-action="Index">
-                                <i class="fas fa-shopping-cart"></i> Cart
+                                <i class="fas fa-shopping-cart"></i> Sepet
                                 @if (ViewBag.CartItemCount > 0)
                                 {
                                     <span class="badge badge-primary">@ViewBag.CartItemCount</span>

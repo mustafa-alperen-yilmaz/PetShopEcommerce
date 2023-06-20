@@ -49,12 +49,13 @@ app.UseAuthorization();
 app.UseSession();
 
 app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
     name: "cart",
     pattern: "Cart/{action}");
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
 

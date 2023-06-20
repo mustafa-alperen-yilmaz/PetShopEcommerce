@@ -1,18 +1,18 @@
 ﻿@model List<Product>
 
-<h1>Cart</h1>
+<h1 style="margin-bottom: 20px;">Sepet</h1>
 
 @if (Model != null && Model.Count > 0)
 {
-    <table>
+    <table class="table">
         <thead>
             <tr>
-                <th>Product Id</th>
-                <th>Name</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Total Price</th>
-                <th>Actions</th>
+                <th>Ürün Numarası</th>
+                <th>Ürünün Adı</th>
+                <th>Ürünün Adeti</th>
+                <th>Ürünün Fiyatı</th>
+                <th>Ürünlerin Toplam Fiyatı</th>
+                <th>Ürünü Sepetten Sil</th>
             </tr>
         </thead>
         <tbody>
@@ -22,19 +22,19 @@
                     <td>@product.Id</td>
                     <td>@product.Name</td>
                     <td>
-                        <form method="post" action="/Cart/UpdateCartItem">
+                        <form method="post" action="/Cart/UpdateCartItem" style="display: inline;">
                             <input type="hidden" name="productId" value="@product.Id" />
-                            <input type="number" name="quantity" value="@product.Quantity" min="0" max="100" />
-                            <button type="submit">Update</button>
+                            <input type="number" name="quantity" value="@product.Quantity" min="0" max="100" class="form-control" style="width: 80px; display: inline-block;" />
+                            <button type="submit" class="btn btn-primary" style="margin-left: 10px;">Güncelle</button>
                         </form>
                     </td>
-                    <td>@product.Price</td>
-                    <td>@(product.Price * product.Quantity)</td>
+                    <td>@product.Price ₺ </td>
+                    <td>@(product.Price * product.Quantity) ₺ </td>
                     <td>
-                        <form method="post" action="/Cart/UpdateCartItem">
+                        <form method="post" action="/Cart/UpdateCartItem" style="display: inline;">
                             <input type="hidden" name="productId" value="@product.Id" />
                             <input type="hidden" name="quantity" value="0" />
-                            <button type="submit">Remove</button>
+                            <button type="submit" class="btn btn-danger">Sil</button>
                         </form>
                     </td>
                 </tr>
@@ -42,14 +42,22 @@
         </tbody>
     </table>
     <div>
-        <h4>Total Price: @Model.Sum(p => p.Price * p.Quantity)</h4>
+        <h4 style="margin-top: 20px;">Toplam Ödenecek Tutar: @Model.Sum(p => p.Price * p.Quantity) ₺ </h4>
     </div>
     <div>
         <a href="/Cart/Payment" class="btn btn-primary">Ödeme Yap</a>
     </div>
-
 }
 else
 {
-    <p>No items in the cart.</p>
+    <p>Sepette ürün Bulunmamaktadır.</p>
+    <div>
+        <button type="button" class="btn btn-primary" onclick="showErrorMessage()">Ödeme Yap</button>
+    </div>
 }
+
+<script>
+    function showErrorMessage() {
+        alert("Sepette ürün bulunmamaktadır.");
+    }
+</script>
