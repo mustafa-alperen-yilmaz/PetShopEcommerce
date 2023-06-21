@@ -17,9 +17,9 @@ namespace PetShopEcommerce.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ApplicationDbContext _dbContext;
         
-        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
-        private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecurityKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
+       // private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
+       // private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
+       // private readonly string iyzicoSecurityKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
         
         
         private List<Product> _cartItems;

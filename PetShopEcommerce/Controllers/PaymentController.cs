@@ -1,42 +1,52 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using PetShopEcommerce.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using PetShopEcommerce.Extensions;
 using Iyzipay;
 using Iyzipay.Model;
 using Iyzipay.Request;
-using PetShopEcommerce.Extensions;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
+using PetShopEcommerce.Data;
 
 namespace PetShopEcommerce.Controllers
 {
     public class PaymentController : Controller
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ApplicationDbContext _dbContext;
         private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
         private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
         private readonly string iyzicoSecretKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
+        private List<Product> _cartItems;
 
-        public PaymentController(IHttpContextAccessor httpContextAccessor)
+        public PaymentController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
         {
             _httpContextAccessor = httpContextAccessor;
+            _cartItems = _httpContextAccessor.HttpContext.Session.GetObject<List<Product>>("CartItems") ?? new List<Product>();
+            _dbContext = dbContext;
         }
 
         public IActionResult Index()
         {
-            List<Product> cartItems = _httpContextAccessor.HttpContext.Session.GetObject<List<Product>>("CartItems") ?? new List<Product>();
-            decimal totalPayment = CalculateTotalPayment(cartItems);
+            decimal totalPayment = CalculateTotalPayment();
             ViewBag.TotalPayment = totalPayment;
+
             return View();
         }
 
         [HttpPost]
         public IActionResult ProcessPayment(string buyerName, string buyerSurname, string buyerEmail, string buyerId, decimal paymentAmount, string currency)
         {
-            List<Product> cartItems = _httpContextAccessor.HttpContext.Session.GetObject<List<Product>>("CartItems") ?? new List<Product>();
+            Options options = new Options
+            {
+                BaseUrl = iyzicoPaymentBaseUrl,
+                ApiKey = iyzicoApiKey,
+                SecretKey = iyzicoSecretKey
+            };
 
-            if (cartItems == null || cartItems.Count == 0)
+            if (_cartItems == null || _cartItems.Count == 0)
             {
                 TempData["ErrorMessage"] = "There are no items in the cart.";
                 return RedirectToAction("Index", "Cart");
@@ -51,7 +61,7 @@ namespace PetShopEcommerce.Controllers
                 PaidPrice = paymentAmount.ToString(),
                 Currency = currency,
                 Installment = 1,
-                BasketId = Guid.NewGuid().ToString(),
+                BasketId = "B67832",
                 PaymentChannel = PaymentChannel.WEB.ToString(),
                 PaymentGroup = PaymentGroup.PRODUCT.ToString()
             };
@@ -94,7 +104,7 @@ namespace PetShopEcommerce.Controllers
 
             // Set basket items
             List<BasketItem> basketItems = new List<BasketItem>();
-            foreach (var product in cartItems)
+            foreach (var product in _cartItems)
             {
                 BasketItem item = new BasketItem
                 {
@@ -109,12 +119,6 @@ namespace PetShopEcommerce.Controllers
             request.BasketItems = basketItems;
 
             // Make payment request
-            Options options = new Options
-            {
-                BaseUrl = iyzicoPaymentBaseUrl,
-                ApiKey = iyzicoApiKey,
-                SecretKey = iyzicoSecretKey
-            };
             Payment payment = Payment.Create(request, options);
 
             if (payment.Status == "success")
@@ -122,8 +126,51 @@ namespace PetShopEcommerce.Controllers
                 // Payment is successful
                 TempData["SuccessMessage"] = "Payment is successful!";
                 // Clear the cart
-                cartItems.Clear();
-                _httpContextAccessor.HttpContext.Session.SetObject("CartItems", cartItems);
+                basketItems.Clear();
+                _httpContextAccessor.HttpContext.Session.SetObject("CartItems", basketItems);
+
+                // Construct the checkout form HTML manually
+                string checkoutFormHtml = "<div id=\"iyzipay-checkout-form\" class=\"responsive\">" +
+                                         "</div>";
+
+                // Pass the checkout form content to the view
+                TempData["CheckoutFormContent"] = checkoutFormHtml;
+
+                // Save the order and order items to the database
+                var userId = "UserId"; // Replace with the actual user ID
+                var orderDate = DateTime.Now;
+                var totalAmount = payment.PaidPrice; // Assuming paid price is the total amount
+                var convertDecimal = Convert.ToDecimal(totalAmount);
+
+                // Create a new order
+                var order = new Order
+                {
+                    UserId = userId,
+                    OrderDate = orderDate,
+                    TotalAmount = convertDecimal,
+                    Status = "Success" // Set the initial status as success, you can update it later if needed
+                };
+
+                // Add the order to the database
+                // You need to have an instance of your DbContext here, let's assume it's called "dbContext"
+                _dbContext.Orders.Add(order);
+                _dbContext.SaveChanges();
+
+                // Create order items and associate them with the order
+                foreach (var product in basketItems)
+                {
+                    var orderItem = new Models.OrderItem
+                    {
+                        OrderId = order.Id,
+                        ProductId =short.Parse(product.Id),
+                        Quantity = 1
+                    };
+
+                    _dbContext.OrderItems.Add(orderItem);
+                }
+
+                _dbContext.SaveChanges();
+
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -134,10 +181,10 @@ namespace PetShopEcommerce.Controllers
             }
         }
 
-        private decimal CalculateTotalPayment(List<Product> cartItems)
+        private decimal CalculateTotalPayment()
         {
             decimal totalPayment = 0;
-            foreach (var product in cartItems)
+            foreach (var product in _cartItems)
             {
                 totalPayment += product.Price * product.Quantity;
             }
