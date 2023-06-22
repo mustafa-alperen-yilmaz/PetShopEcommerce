@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Iyzipay;
 using Iyzipay.Model;
 using Iyzipay.Request;
+using Azure.Core;
 
 namespace PetShopEcommerce.Controllers
 {
@@ -16,12 +17,12 @@ namespace PetShopEcommerce.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ApplicationDbContext _dbContext;
-        
-       // private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
-       // private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-       // private readonly string iyzicoSecurityKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
-        
-        
+
+        // private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
+        // private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
+        // private readonly string iyzicoSecurityKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlH";
+
+
         private List<Product> _cartItems;
 
         public CartController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
@@ -86,5 +87,13 @@ namespace PetShopEcommerce.Controllers
 
             return RedirectToAction("Index");
         }
+        [HttpPost]
+        public IActionResult GetPay(string returnUrl)
+        {
+            decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
+
+            return RedirectToAction("Index", "Payment", new { totalPrice = totalPrice, returnUrl = returnUrl });
+        }
+
     }
 }

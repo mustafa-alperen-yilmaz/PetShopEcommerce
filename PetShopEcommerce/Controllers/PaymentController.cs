@@ -9,6 +9,7 @@ using Iyzipay.Request;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using PetShopEcommerce.Data;
+using System.Diagnostics;
 
 namespace PetShopEcommerce.Controllers
 {
@@ -18,8 +19,10 @@ namespace PetShopEcommerce.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
         private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecretKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
+        private readonly string iyzicoSecretKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlH";
         private List<Product> _cartItems;
+        public static string conversation_id = "";
+        public static string token = "";
 
         public PaymentController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
         {
@@ -28,167 +31,127 @@ namespace PetShopEcommerce.Controllers
             _dbContext = dbContext;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string? token, decimal totalPrice)
         {
-            decimal totalPayment = CalculateTotalPayment();
-            ViewBag.TotalPayment = totalPayment;
+            ViewBag.TotalPrice = totalPrice;
+
+            if (token != null)
+            {
+                Options options = new Options();
+                options.ApiKey = iyzicoApiKey;
+                options.SecretKey = iyzicoSecretKey;
+                options.BaseUrl = iyzicoPaymentBaseUrl;
+
+                RetrieveCheckoutFormRequest request2 = new RetrieveCheckoutFormRequest();
+                request2.Locale = "tr";
+                request2.Token = token;
+
+                CheckoutForm checkoutForm = CheckoutForm.Retrieve(request2, options);
+                if (checkoutForm.PaymentStatus == "SUCCESS")
+                {
+                    TempData["Payment_Status"] = "Ödeme işlemi başarıyla gerçekleşti.";
+                }
+                else
+                {
+                    TempData["Payment_Status"] = checkoutForm.ErrorMessage;
+                }
+
+            }
 
             return View();
         }
 
         [HttpPost]
-        public IActionResult ProcessPayment(string buyerName, string buyerSurname, string buyerEmail, string buyerId, decimal paymentAmount, string currency)
+        public IActionResult GetPay(string returnUrl)
         {
-            Options options = new Options
-            {
-                BaseUrl = iyzicoPaymentBaseUrl,
-                ApiKey = iyzicoApiKey,
-                SecretKey = iyzicoSecretKey
-            };
 
-            if (_cartItems == null || _cartItems.Count == 0)
-            {
-                TempData["ErrorMessage"] = "There are no items in the cart.";
-                return RedirectToAction("Index", "Cart");
-            }
+            Options options = new Options();
+            options.ApiKey = iyzicoApiKey;
+            options.SecretKey = iyzicoSecretKey;
+            options.BaseUrl = iyzicoPaymentBaseUrl;
 
-            // Create payment request
-            CreatePaymentRequest request = new CreatePaymentRequest
-            {
-                Locale = Locale.TR.ToString(),
-                ConversationId = "123456789",
-                Price = paymentAmount.ToString(),
-                PaidPrice = paymentAmount.ToString(),
-                Currency = currency,
-                Installment = 1,
-                BasketId = "B67832",
-                PaymentChannel = PaymentChannel.WEB.ToString(),
-                PaymentGroup = PaymentGroup.PRODUCT.ToString()
-            };
+            decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
 
-            // Set buyer information
-            Buyer buyer = new Buyer
-            {
-                Id = buyerId,
-                Name = buyerName,
-                Surname = buyerSurname,
-                Email = buyerEmail,
-                IdentityNumber = buyerId,
-                RegistrationAddress = "Istanbul",
-                City = "Istanbul",
-                Country = "Turkey"
-            };
+            decimal paidPrice = totalPrice + 1m; // Use decimal literal "1m" to indicate a decimal value
+
+            CreateCheckoutFormInitializeRequest request = new CreateCheckoutFormInitializeRequest();
+            request.Locale = Locale.TR.ToString();
+            request.ConversationId = "123456789";
+            request.Price = "10";
+            request.PaidPrice = "20";
+            request.Currency = Currency.TRY.ToString();
+            request.BasketId = "B67832";
+            request.PaymentGroup = PaymentGroup.PRODUCT.ToString();
+            request.CallbackUrl = "https://localhost:7177/";
+
+            List<int> enabledInstallments = new List<int>();
+            enabledInstallments.Add(2);
+            enabledInstallments.Add(3);
+            enabledInstallments.Add(6);
+            enabledInstallments.Add(9);
+            request.EnabledInstallments = enabledInstallments;
+
+            Buyer buyer = new Buyer();
+            buyer.Id = "BY789";
+            buyer.Name = "John2";
+            buyer.Surname = "Doe2";
+            buyer.GsmNumber = "+905350000000";
+            buyer.Email = "email@email.com";
+            buyer.IdentityNumber = "74300864791";
+            buyer.LastLoginDate = "2015-10-05 12:43:35";
+            buyer.RegistrationDate = "2013-04-21 15:12:09";
+            buyer.RegistrationAddress = "Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1";
+            buyer.Ip = "85.34.78.112";
+            buyer.City = "Istanbul";
+            buyer.Country = "Turkey";
+            buyer.ZipCode = "34732";
             request.Buyer = buyer;
 
-            // Set shipping address
-            Address shippingAddress = new Address
-            {
-                ContactName = buyerName + " " + buyerSurname,
-                City = "Istanbul",
-                Country = "Turkey",
-                Description = "Home",
-                ZipCode = "34742"
-            };
+            Address shippingAddress = new Address();
+            shippingAddress.ContactName = "Jane Doe";
+            shippingAddress.City = "Istanbul";
+            shippingAddress.Country = "Turkey";
+            shippingAddress.Description = "Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1";
+            shippingAddress.ZipCode = "34742";
             request.ShippingAddress = shippingAddress;
 
-            // Set billing address
-            Address billingAddress = new Address
-            {
-                ContactName = buyerName + " " + buyerSurname,
-                City = "Istanbul",
-                Country = "Turkey",
-                Description = "Invoice",
-                ZipCode = "34742"
-            };
+            Address billingAddress = new Address();
+            billingAddress.ContactName = "Jane Doe";
+            billingAddress.City = "Istanbul";
+            billingAddress.Country = "Turkey";
+            billingAddress.Description = "Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1";
+            billingAddress.ZipCode = "34742";
             request.BillingAddress = billingAddress;
 
-            // Set basket items
+
             List<BasketItem> basketItems = new List<BasketItem>();
-            foreach (var product in _cartItems)
-            {
-                BasketItem item = new BasketItem
-                {
-                    Id = product.Id.ToString(),
-                    Name = product.Name,
-                    Category1 = "Pets",
-                    ItemType = BasketItemType.PHYSICAL.ToString(),
-                    Price = product.Price.ToString()
-                };
-                basketItems.Add(item);
-            }
+            BasketItem firstBasketItem = new BasketItem();
+            firstBasketItem.Id = "BI101";
+            firstBasketItem.Name = "Binocular";
+            firstBasketItem.Category1 = "Collectibles";
+            firstBasketItem.Category2 = "Accessories";
+            firstBasketItem.ItemType = BasketItemType.PHYSICAL.ToString();
+            firstBasketItem.Price = "10";
+            basketItems.Add(firstBasketItem);
+
+
             request.BasketItems = basketItems;
+            CheckoutFormInitialize checkoutFormInitialize = CheckoutFormInitialize.Create(request, options);
+            conversation_id = checkoutFormInitialize.ConversationId;
+            TempData["Checkout_Form"] = checkoutFormInitialize.CheckoutFormContent;
 
-            // Make payment request
-            Payment payment = Payment.Create(request, options);
-
-            if (payment.Status == "success")
-            {
-                // Payment is successful
-                TempData["SuccessMessage"] = "Payment is successful!";
-                // Clear the cart
-                basketItems.Clear();
-                _httpContextAccessor.HttpContext.Session.SetObject("CartItems", basketItems);
-
-                // Construct the checkout form HTML manually
-                string checkoutFormHtml = "<div id=\"iyzipay-checkout-form\" class=\"responsive\">" +
-                                         "</div>";
-
-                // Pass the checkout form content to the view
-                TempData["CheckoutFormContent"] = checkoutFormHtml;
-
-                // Save the order and order items to the database
-                var userId = "UserId"; // Replace with the actual user ID
-                var orderDate = DateTime.Now;
-                var totalAmount = payment.PaidPrice; // Assuming paid price is the total amount
-                var convertDecimal = Convert.ToDecimal(totalAmount);
-
-                // Create a new order
-                var order = new Order
-                {
-                    UserId = userId,
-                    OrderDate = orderDate,
-                    TotalAmount = convertDecimal,
-                    Status = "Success" // Set the initial status as success, you can update it later if needed
-                };
-
-                // Add the order to the database
-                // You need to have an instance of your DbContext here, let's assume it's called "dbContext"
-                _dbContext.Orders.Add(order);
-                _dbContext.SaveChanges();
-
-                // Create order items and associate them with the order
-                foreach (var product in basketItems)
-                {
-                    var orderItem = new Models.OrderItem
-                    {
-                        OrderId = order.Id,
-                        ProductId =short.Parse(product.Id),
-                        Quantity = 1
-                    };
-
-                    _dbContext.OrderItems.Add(orderItem);
-                }
-
-                _dbContext.SaveChanges();
-
-                return RedirectToAction("Index", "Home");
-            }
-            else
-            {
-                // Payment is not successful
-                TempData["ErrorMessage"] = "Payment failed. Please try again.";
-                return RedirectToAction("Index", "Payment");
-            }
+            return RedirectToAction("Index", new { token = checkoutFormInitialize.Token, totalPrice = totalPrice });
         }
 
-        private decimal CalculateTotalPayment()
+        public IActionResult Privacy()
         {
-            decimal totalPayment = 0;
-            foreach (var product in _cartItems)
-            {
-                totalPayment += product.Price * product.Quantity;
-            }
-            return totalPayment;
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

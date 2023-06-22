@@ -1,18 +1,16 @@
-﻿@{
-    ViewBag.Title = "Ödeme";
-    Layout = null; // Set the layout to null since we're using a partial view
+﻿﻿@{
+    ViewData["Title"] = "Ödeme Sayfası";
 }
 
-<div class="container">
-    <h2>@ViewBag.Title</h2>
-    @Html.Partial("_PaymentForm")
-</div>
+<form asp-controller="Payment" asp-action="GetPay">
+    <input type="text" name="return_url" value="@Context.Request.Path" hidden />
+    <button class="btn btn-warning" type="submit">Ödemeye Devam Et </button>
+</form>
+<div id="iyzipay-checkout-form" class="responsive"></div>
 
-@section Scripts {
-    <script src="https://cdn.iyzipay.com.tr/js/iyzipay.js"></script>
-    <script>
-        $(document).ready(function () {
-            // No need to use iyzipay.checkoutForm() anymore
-        });
-    </script>
-}
+@Html.Raw(TempData["Checkout_Form"])
+<script type="text/javascript">
+    $(document).ready(function () {
+        alert(@TempData["status"]);
+    });
+</script>
