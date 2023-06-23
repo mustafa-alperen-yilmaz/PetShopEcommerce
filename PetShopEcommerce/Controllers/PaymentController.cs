@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using PetShopEcommerce.Models;
 using System.Collections.Generic;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using PetShopEcommerce.Extensions;
 using Iyzipay;
 using Iyzipay.Model;
@@ -10,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using PetShopEcommerce.Data;
 using System.Diagnostics;
+using Azure.Core;
+
 
 namespace PetShopEcommerce.Controllers
 {
@@ -17,12 +21,13 @@ namespace PetShopEcommerce.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ApplicationDbContext _dbContext;
-        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
+        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com";
         private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecretKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlH";
+        private readonly string iyzicoSecretKey = "ESIIACicEITvWi1gai8cyrrbzaUsmoSt";
         private List<Product> _cartItems;
         public static string conversation_id = "";
-        public static string token = "";
+        public static String token = "";
+
 
         public PaymentController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
         {
@@ -31,7 +36,7 @@ namespace PetShopEcommerce.Controllers
             _dbContext = dbContext;
         }
 
-        public IActionResult Index(string? token, decimal totalPrice)
+        public IActionResult Index(string token, decimal totalPrice)
         {
             ViewBag.TotalPrice = totalPrice;
 
@@ -42,11 +47,12 @@ namespace PetShopEcommerce.Controllers
                 options.SecretKey = iyzicoSecretKey;
                 options.BaseUrl = iyzicoPaymentBaseUrl;
 
-                RetrieveCheckoutFormRequest request2 = new RetrieveCheckoutFormRequest();
-                request2.Locale = "tr";
-                request2.Token = token;
+                RetrieveCheckoutFormRequest request = new RetrieveCheckoutFormRequest();
+                request.Locale = "tr";
+                request.ConversationId = "123456789";
+                request.Token = token;
 
-                CheckoutForm checkoutForm = CheckoutForm.Retrieve(request2, options);
+                CheckoutForm checkoutForm = CheckoutForm.Retrieve(request, options);
                 if (checkoutForm.PaymentStatus == "SUCCESS")
                 {
                     TempData["Payment_Status"] = "Ödeme işlemi başarıyla gerçekleşti.";
@@ -62,7 +68,10 @@ namespace PetShopEcommerce.Controllers
         }
 
         [HttpPost]
-        public IActionResult GetPay(string returnUrl)
+        public IActionResult GetPay(string returnUrl, string shippingContactName, string shippingCity, string shippingCountry,
+    string shippingDescription, string shippingZipCode,
+    string billingContactName, string billingCity, string billingCountry,
+    string billingDescription, string billingZipCode)
         {
 
             Options options = new Options();
@@ -70,15 +79,25 @@ namespace PetShopEcommerce.Controllers
             options.SecretKey = iyzicoSecretKey;
             options.BaseUrl = iyzicoPaymentBaseUrl;
 
-            decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
 
-            decimal paidPrice = totalPrice + 1m; // Use decimal literal "1m" to indicate a decimal value
+
+            decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
+            decimal test = _cartItems.Sum(_ => _.Price * _.Quantity );
+            decimal paidPrice = test + 1m;
+
+            int intPrice = Convert.ToInt32(test);
+            string stringPrice = intPrice.ToString();
+            int intPaidPrice = Convert.ToInt32(paidPrice); 
+            string stringPaidPrice = intPaidPrice.ToString();
+
+            var user = _dbContext.Users.FirstOrDefault();
+
 
             CreateCheckoutFormInitializeRequest request = new CreateCheckoutFormInitializeRequest();
             request.Locale = Locale.TR.ToString();
             request.ConversationId = "123456789";
-            request.Price = "10";
-            request.PaidPrice = "20";
+            request.Price = stringPrice;
+            request.PaidPrice = stringPaidPrice;
             request.Currency = Currency.TRY.ToString();
             request.BasketId = "B67832";
             request.PaymentGroup = PaymentGroup.PRODUCT.ToString();
@@ -92,11 +111,11 @@ namespace PetShopEcommerce.Controllers
             request.EnabledInstallments = enabledInstallments;
 
             Buyer buyer = new Buyer();
-            buyer.Id = "BY789";
-            buyer.Name = "John2";
-            buyer.Surname = "Doe2";
+            buyer.Id = user.Id;
+            buyer.Name = user.UserName;
+            buyer.Surname = user.NormalizedUserName;
             buyer.GsmNumber = "+905350000000";
-            buyer.Email = "email@email.com";
+            buyer.Email = user.Email;
             buyer.IdentityNumber = "74300864791";
             buyer.LastLoginDate = "2015-10-05 12:43:35";
             buyer.RegistrationDate = "2013-04-21 15:12:09";
@@ -108,19 +127,19 @@ namespace PetShopEcommerce.Controllers
             request.Buyer = buyer;
 
             Address shippingAddress = new Address();
-            shippingAddress.ContactName = "Jane Doe";
-            shippingAddress.City = "Istanbul";
-            shippingAddress.Country = "Turkey";
-            shippingAddress.Description = "Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1";
-            shippingAddress.ZipCode = "34742";
+            shippingAddress.ContactName = shippingContactName;
+            shippingAddress.City = shippingCity;
+            shippingAddress.Country = shippingCountry;
+            shippingAddress.Description = shippingDescription;
+            shippingAddress.ZipCode = shippingZipCode;
             request.ShippingAddress = shippingAddress;
 
             Address billingAddress = new Address();
-            billingAddress.ContactName = "Jane Doe";
-            billingAddress.City = "Istanbul";
-            billingAddress.Country = "Turkey";
-            billingAddress.Description = "Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1";
-            billingAddress.ZipCode = "34742";
+            billingAddress.ContactName = billingContactName;
+            billingAddress.City = billingCity;
+            billingAddress.Country = billingCountry;
+            billingAddress.Description = billingDescription;
+            billingAddress.ZipCode = billingZipCode;
             request.BillingAddress = billingAddress;
 
 
@@ -131,7 +150,7 @@ namespace PetShopEcommerce.Controllers
             firstBasketItem.Category1 = "Collectibles";
             firstBasketItem.Category2 = "Accessories";
             firstBasketItem.ItemType = BasketItemType.PHYSICAL.ToString();
-            firstBasketItem.Price = "10";
+            firstBasketItem.Price = stringPrice;
             basketItems.Add(firstBasketItem);
 
 

@@ -90,7 +90,21 @@ namespace PetShopEcommerce.Controllers
         [HttpPost]
         public IActionResult GetPay(string returnUrl)
         {
-            decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
+            // Calculate the totalPrice only if the cart items are not empty
+            decimal totalPrice = 0;
+            if (_cartItems != null && _cartItems.Count > 0)
+            {
+                totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
+            }
+
+            if (totalPrice <= 0)
+            {
+                // Handle the case when the totalPrice is invalid (e.g., no cart items or invalid Price/Quantity values)
+                TempData["Payment_Status"] = "Invalid total price";
+                return RedirectToAction("Index", "Cart");
+            }
+
+            decimal paidPrice = totalPrice + 1m; // Use decimal literal "1m" to indicate a decimal value
 
             return RedirectToAction("Index", "Payment", new { totalPrice = totalPrice, returnUrl = returnUrl });
         }
