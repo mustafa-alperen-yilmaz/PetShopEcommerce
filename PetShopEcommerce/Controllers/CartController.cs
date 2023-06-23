@@ -6,6 +6,10 @@ using PetShopEcommerce.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PetShopEcommerce.Data;
 using Microsoft.EntityFrameworkCore;
+using Iyzipay;
+using Iyzipay.Model;
+using Iyzipay.Request;
+using Azure.Core;
 
 namespace PetShopEcommerce.Controllers
 {
@@ -13,9 +17,12 @@ namespace PetShopEcommerce.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ApplicationDbContext _dbContext;
-        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
-        private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecurityKey = "sandbox-LIGrmv8wXRNhsz4diJm2dqPEHYOZOrlP";
+
+        // private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
+        // private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
+        // private readonly string iyzicoSecretKey = "ESIIACicEITvWi1gai8cyrrbzaUsmoSt";
+
+
         private List<Product> _cartItems;
 
         public CartController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
@@ -80,51 +87,28 @@ namespace PetShopEcommerce.Controllers
 
             return RedirectToAction("Index");
         }
-        public IActionResult Payment()
+        [HttpPost]
+        public IActionResult GetPay(string returnUrl)
         {
-            // Sepet kontrolü yapın
-            if (_cartItems == null || _cartItems.Count == 0)
+
+            decimal totalPrice = 0;
+            if (_cartItems != null && _cartItems.Count > 0)
             {
-                TempData["ErrorMessage"] = "Sepette ürün bulunmamaktadır.";
+                totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
+            }
+
+            if (totalPrice <= 0)
+            {
+
+                TempData["Payment_Status"] = "Invalid total price";
                 return RedirectToAction("Index", "Cart");
             }
 
-            // Ödeme işlemlerini gerçekleştirin ve sonucu işleyin
 
-            return View();
+            decimal paidPrice = totalPrice + 1m; 
+
+            return RedirectToAction("Index", "Payment", new { totalPrice = totalPrice, returnUrl = returnUrl });
         }
-        private IyzicoPaymentResult ProcessIyzicoPayment(decimal amount)
-        {
-            var paymentResult = new IyzicoPaymentResult();
 
-            try
-            {
-                paymentResult.Success = true;
-                paymentResult.TransactionId = "1234567890";
-
-                // Orders tablosuna yeni bir kayıt ekle
-                var order = new Order
-                {
-                    TotalAmount = amount,
-                    OrderDate = DateTime.Now,
-                    Status = "true",
-                    // Diğer ödeme bilgilerini doldurabilirsiniz
-                };
-
-                using (_dbContext)
-                {
-                    _dbContext.Orders.Add(order);
-                    _dbContext.SaveChanges();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Hata yönetimi
-                paymentResult.Success = false;
-                // Hata mesajını işleyin veya loglayın
-            }
-
-            return paymentResult;
-        }
     }
 }
