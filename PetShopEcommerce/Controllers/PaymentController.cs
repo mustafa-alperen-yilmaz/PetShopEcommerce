@@ -21,12 +21,13 @@ namespace PetShopEcommerce.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ApplicationDbContext _dbContext;
-        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com";
+        private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
         private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
         private readonly string iyzicoSecretKey = "ESIIACicEITvWi1gai8cyrrbzaUsmoSt";
         private List<Product> _cartItems;
         public static string conversation_id = "";
-        public static String token = "";
+        public static string token = "";
+
 
 
         public PaymentController(IHttpContextAccessor httpContextAccessor, ApplicationDbContext dbContext)
@@ -55,6 +56,8 @@ namespace PetShopEcommerce.Controllers
                 CheckoutForm checkoutForm = CheckoutForm.Retrieve(request, options);
                 if (checkoutForm.PaymentStatus == "SUCCESS")
                 {
+                    string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    CreateOrder(userId, totalPrice, _cartItems);
                     TempData["Payment_Status"] = "Ödeme işlemi başarıyla gerçekleşti.";
                 }
                 else
@@ -171,6 +174,37 @@ namespace PetShopEcommerce.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+        private void CreateOrder(string userId, decimal totalAmount, List<Product> cartItems)
+        {
+            // Create a new Order instance
+            Order order = new Order
+            {
+                UserId = userId,
+                OrderDate = DateTime.Now,
+                TotalAmount = totalAmount,
+                Status = "Completed"
+            };
+
+            // Add the order to the database
+            _dbContext.Orders.Add(order);
+            _dbContext.SaveChanges();
+
+            // Create OrderItem instances for each item in the cart
+            foreach (Product cartItem in cartItems)
+            {
+                Models.OrderItem orderItem = new Models.OrderItem
+                {
+                    OrderId = order.Id,
+                    ProductId = cartItem.Id,
+                    Quantity = cartItem.Quantity
+                };
+
+                // Add the order item to the database
+                _dbContext.OrderItems.Add(orderItem);
+            }
+
+            _dbContext.SaveChanges();
         }
     }
 }
