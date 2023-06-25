@@ -2,40 +2,48 @@
 using Iyzipay.Model;
 using Iyzipay.Request;
 using Microsoft.AspNetCore.Mvc;
-using PetShopEcommerce.Models;
 
-namespace PetShopEcommerce.Controllers
+public class OrderController : Controller
 {
-    public class OrderController : Controller
+    private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
+    private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
+    private readonly string iyzicoSecretKey = "SSKsMTrv0C6bKnoVe3vthnk9u5StTAm7";
+
+    public ActionResult Index()
     {
-        private readonly string iyzicoRefundBaseUrl = "https://sandbox-api.iyzipay.com/";
-        private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecretKey = "ESIIACicEITvWi1gai8cyrrbzaUsmoSt";
-        public IActionResult Index()
-        {
-            Payment payment = GetPaymentFromAPI();
+        RetrievePaymentRequest paymentRequest = new RetrievePaymentRequest();
+        paymentRequest.Locale = Locale.TR.ToString();
+        paymentRequest.ConversationId = "123456789";
+        paymentRequest.PaymentId = "1";
+        paymentRequest.PaymentConversationId = "123456789";
 
-           
+        Options options = new Options();
+        options.ApiKey = iyzicoApiKey;
+        options.SecretKey = iyzicoSecretKey;
+        options.BaseUrl = iyzicoPaymentBaseUrl;
 
-            return View(payment);
-        }
+        Payment payment = Payment.Retrieve(paymentRequest, options);
 
-        private Payment GetPaymentFromAPI()
-        {
-            Options options = new Options();
-            options.ApiKey = iyzicoApiKey;
-            options.SecretKey = iyzicoSecretKey;
-            options.BaseUrl = iyzicoRefundBaseUrl;
+        return View(payment);
+    }
 
-            RetrievePaymentRequest request = new RetrievePaymentRequest();
-            request.Locale = Locale.TR.ToString();
-            request.ConversationId = "123456789";
-            request.PaymentId = "1";
-            request.PaymentConversationId = "123456789";
+    public ActionResult CreateRefund()
+    {
+        CreateRefundRequest refundRequest = new CreateRefundRequest();
+        refundRequest.ConversationId = "123456789";
+        refundRequest.Locale = Locale.TR.ToString();
+        refundRequest.PaymentTransactionId = "1";
+        refundRequest.Price = "0.5";
+        refundRequest.Ip = "85.34.78.112";
+        refundRequest.Currency = Currency.TRY.ToString();
 
-            Payment payment = Payment.Retrieve(request, options);
+        Options options = new Options();
+        options.ApiKey = iyzicoApiKey;
+        options.SecretKey = iyzicoSecretKey;
+        options.BaseUrl = iyzicoPaymentBaseUrl;
 
-            return payment;
-        }
+        Refund refund = Refund.Create(refundRequest, options);
+
+        return View(refund);
     }
 }

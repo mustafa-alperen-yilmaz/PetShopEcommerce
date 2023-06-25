@@ -23,7 +23,7 @@ namespace PetShopEcommerce.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly string iyzicoPaymentBaseUrl = "https://sandbox-api.iyzipay.com/";
         private readonly string iyzicoApiKey = "sandbox-bNz0cUEE9j39vHnsUPcnwF6S8bHcm4Y7";
-        private readonly string iyzicoSecretKey = "ESIIACicEITvWi1gai8cyrrbzaUsmoSt";
+        private readonly string iyzicoSecretKey = "SSKsMTrv0C6bKnoVe3vthnk9u5StTAm7";
         private List<Product> _cartItems;
         public static string conversation_id = "";
         public static string token = "";
@@ -85,12 +85,12 @@ namespace PetShopEcommerce.Controllers
 
 
             decimal totalPrice = _cartItems.Sum(product => product.Price * product.Quantity);
-            decimal test = _cartItems.Sum(_ => _.Price * _.Quantity );
+            decimal test = _cartItems.Sum(_ => _.Price * _.Quantity);
             decimal paidPrice = test + 1m;
 
             int intPrice = Convert.ToInt32(test);
             string stringPrice = intPrice.ToString();
-            int intPaidPrice = Convert.ToInt32(paidPrice); 
+            int intPaidPrice = Convert.ToInt32(paidPrice);
             string stringPaidPrice = intPaidPrice.ToString();
 
             var user = _dbContext.Users.FirstOrDefault();

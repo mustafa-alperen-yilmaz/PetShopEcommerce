@@ -1,33 +1,19 @@
-﻿@{
-    ViewData["Title"] = "Siparişler";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Uygun layout dosyasını belirtin
+﻿@model Iyzipay.Model.Payment
+
+@{
+    ViewBag.Title = "Order Details";
 }
 
-<h1>Siparişlerim</h1>
+<h1>Order Details</h1>
 
-@if (Model != null && Model.Count > 0)
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Sipariş Numarası</th>
-                <th>Tutar</th>
-                <th>Durum</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var order in Model)
-            {
-                <tr>
-                    <td>@order.OrderNumber</td>
-                    <td>@order.TotalAmount</td>
-                    <td>@order.Status</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>Henüz siparişiniz bulunmamaktadır.</p>
-}
+<!-- Ödeme bilgilerini görüntüleme -->
+<h2>Retrieve Payment</h2>
+<p>Payment Id: @Model.PaymentId</p>
+<p>Price: @Model.Price</p>
+<p>Payment Status: @Model.Status</p>
+<!-- Diğer ödeme bilgilerini buraya ekleyebilirsiniz -->
+<!-- İptal bilgilerini görüntüleme -->
+<h2>Create Refund</h2>
+<p>Refund Status: @Model.Status</p>
+
+<!-- Diğer iptal bilgilerini buraya ekleyebilirsiniz -->

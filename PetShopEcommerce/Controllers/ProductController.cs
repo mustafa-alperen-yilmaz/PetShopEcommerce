@@ -14,11 +14,30 @@ namespace PetShopEcommerce.Controllers
             _dbContext = dbContext;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string sortOrder)
         {
-            List<Product> products = _dbContext.Products.ToList();
+            ViewData["NameSortParam"] = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewData["PriceSortParam"] = sortOrder == "price" ? "price_desc" : "price";
 
-            return View(products);
+            IQueryable<Product> products = _dbContext.Products.AsQueryable();
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    products = products.OrderByDescending(p => p.Name);
+                    break;
+                case "price":
+                    products = products.OrderBy(p => p.Price);
+                    break;
+                case "price_desc":
+                    products = products.OrderByDescending(p => p.Price);
+                    break;
+                default:
+                    products = products.OrderBy(p => p.Name);
+                    break;
+            }
+
+            return View(products.ToList());
         }
 
         public IActionResult Details(int id)
